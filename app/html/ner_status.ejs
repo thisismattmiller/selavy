@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" class="keep-it-100">
+<head>
+
+    <link rel="stylesheet" type="text/css" href="/html/css/bulma.min.css" >
+    <link rel="stylesheet" type="text/css" href="/html/css/ner.css" >
+
+</head>
+<body class="container is-fluid keep-it-100">
+
+
+
+    <script>
+
+
+
+
+    	var doc = "<%- docId %>";
+    	var status = <%- status %>;
+    	var totalBlocks = <%- totalBlocks %>;
+    	var processedBlocks = <%- processedBlocks %>;
+
+
+
+
+
+    </script>
+
+
+    <br><br><br><br>
+    <div><%- status %>%</div>
+    <progress class="progress is-large" value="<%- status %>" max="100"></progress>
+
+
+    <a href="" id="done-100" class="button is-link is-loading">NEXT</a>
+
+
+
+
+    <script>
+
+
+    	if (status < 100){
+
+    		setTimeout(()=>{
+
+
+    			location.reload();
+
+    		},2000)
+    	}else{
+
+
+    		document.getElementById("done-100").classList.remove('is-loading')
+    		document.getElementById("done-100").setAttribute('href',`/document/${doc}/parse`)
+    	}
+    </script>
+
+</body>
+
+
+
+
+</html>

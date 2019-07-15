@@ -1,0 +1,37 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  app:
+    image: node:alpine
+    volumes:
+      - ./:/app
+    working_dir: /app
+    depends_on:
+      - mongo
+      - tika
+    environment:
+      NODE_ENV: development
+    ports:
+      - 3000:3000
+    command: npm run dev
+
+  mongo:
+    image: mongo
+    restart: always
+
+    volumes:
+      - ./app/db:/data/db
+      # - ./app/mongo-entrypoint:/docker-entrypoint-initdb.d
+    expose:
+      - 27017
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: example
+
+  tika:
+    image: logicalspark/docker-tikaserver
+    restart: always
+    expose:
+      - 9998

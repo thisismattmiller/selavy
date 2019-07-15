@@ -1,0 +1,39 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+<!--   <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css"> -->
+</head>
+
+<body>
+
+
+    <%if (isAuthenticated) { %>
+
+      You are logged in as <%=user.email%>
+
+      <a href="/upload/">Start processing a new document?</a>
+
+    <% }else{ %>
+      <p>Welcome! Please Login.</p>
+
+      <hr><br>
+      <a href="/auth/github" class="btn btn-default">Github</a>
+      <a href="/auth/twitter" class="btn btn-default">Twitter</a>
+    <% } %>
+
+
+</body>
+
+</html>

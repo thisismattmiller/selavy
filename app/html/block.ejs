@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" class="keep-it-100">
+<head>
+
+
+
+
+    <link rel="stylesheet" type="text/css" href="/html/css/bulma.min.css" >
+    <link rel="stylesheet" type="text/css" href="/html/css/block.css" >
+	<link rel="stylesheet" type="text/css" href="/html/css/all.min.css">
+
+
+
+
+
+
+
+</head>
+<body class="container is-fluid keep-it-100">
+	<form action="/block" method="post" class="keep-it-100" >
+	    <div class="columns keep-it-100">
+
+		  <div class="column keep-it-100 is-one-half" id="blocks-holder">
+
+
+		  </div>
+		  <div class="column">
+		    <h5>Auto Split</h5>
+		  	<div class="columns regex-buttons">
+
+		  		<div class="column">
+		  			<input class="input" value=".*(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday).*(1903|1904).*" id="add-regex-pattern" type="text" placeholder="Regex">
+		  		</div>
+
+
+		  		<div class="column is-one-fifth">
+		  			<a class="button is-primary" id="add-regex-button">Add</a>
+		  		</div>
+
+		  	</div>
+
+
+			<div id="regex-list">
+
+
+			</div>
+
+			<hr/>
+		    <h5>Block Filters</h5>
+
+
+
+
+		  	<div class="columns regex-buttons">
+
+		  		<div class="column">
+					<div class="select">
+					  <select id="filter-select">
+					    <option>Add a block filter</option>
+						<% for (var key in plugins) { %>
+					    	<option value="<%=plugins[key]%>"><%=plugins[key].replace('.js','').replace(/_/g,' ')%></option>
+						<% } %>
+					  </select>
+					</div>
+
+
+		  		</div>
+
+
+
+
+		  	</div>
+
+
+
+			<div id="filter-list">
+
+
+			</div>
+
+
+			<hr/>
+
+
+			<button class="button is-link" action="submit" id="done">Finished</button>
+
+
+
+		  </div>
+
+
+
+
+		</div>
+	</form>
+
+
+    <script>
+
+    	var regexes = []
+    	var filters = []
+
+
+    	function applyFilters(){
+
+    		// rebuild the blocks    		
+    		var blocks = applyBlocks()
+    		var newBlocks = []
+    		filters.forEach((f)=>{
+
+    			blocks.forEach((b)=>{
+    				var text = b.block.join('')
+    				text = window[f.replace('.js','')](text)
+    				b.block = [text]
+    			})
+    		})
+
+    		renderBlocks(blocks)
+
+    		return blocks
+    	}
+
+    	function renderBlocks(blocks){
+
+    		var blockHolder = document.getElementById('blocks-holder')
+    		blockHolder.innerHTML=""
+
+    		blocks.forEach((b, i)=>{
+
+				var block = document.createElement("div")
+				block.classList.add('block')
+				block.setAttribute('id',`block-${i}`)
+
+				var text = ""
+				var lastLine = ""
+
+
+				b.block.forEach((line)=>{
+					text = text + line.replace(/\n/g,"↵<br/>")
+				})
+
+				block.innerHTML = text
+				// console.log(text)
+
+				blockHolder.appendChild(block)
+
+
+    		})
+
+
+    	}
+
+    	function applyBlocks(){
+
+    		if (regexes.length == 0){
+    			var useRegexs = [new RegExp("\n","g")]
+    		}else{
+    			var useRegexs = regexes.map((r)=> {return new RegExp(r,"g")} )
+    		}
+
+
+    		var lines = textClean.split("\n")
+
+    		var blocks = []
+    		var linesBefore = []
+
+
+    		lines.forEach((line)=>{
+
+
+    			// console.log(line)
+
+    			line = line + '\n'
+    			var hitRegex = false;
+
+    			useRegexs.forEach((re)=>{
+
+    				if (hitRegex) return false
+
+    				if (line.match(re)){
+    					
+    					if (linesBefore.length>0) blocks.push({regex: re, block: linesBefore, id: blocks.length});
+    					linesBefore = []
+    					linesBefore.push(line)
+    					hitRegex = true
+    				}
+
+    			})
+
+    			if (!hitRegex) linesBefore.push(line)
+
+
+
+
+    		})
+
+    		// add in the leftovers
+    		blocks.push({regex: null, block: linesBefore, id: blocks.length})
+
+    		console.log(blocks)
+    		
+    		return blocks
+
+
+    	}
+    	function renderFilterList(){
+			document.getElementById('filter-list').innerHTML=""
+
+			var ul = document.createElement("ul")
+
+			filters.forEach((r)=>{
+				var li = document.createElement("li")
+
+				var a = document.createElement("a")
+
+				a.dataset.filter = r
+				a.setAttribute('href','#')
+				a.innerHTML = `
+					<span class="icon has-text-danger">
+					  <i class="fas fa-trash"></i>
+					</span>
+					<span>Remove "${r}" fiter from the blocks.</span>
+				`
+
+				a.addEventListener("click",function(e){
+					var rmfilter = this.dataset.filter
+					filters = filters.filter(r => r != rmfilter)
+					e.preventDefault();
+
+					renderFilterList()
+					
+					renderBlocks(applyBlocks())
+
+					return false
+				},false);  
+
+	    		li.appendChild(a); 
+	    		ul.appendChild(li); 
+
+
+			})
+	    	document.getElementById('filter-list').appendChild(ul); 
+
+
+
+
+
+    	}
+    	function renderRegexList(){
+			document.getElementById('regex-list').innerHTML=""
+
+			var ul = document.createElement("ul")
+
+			regexes.forEach((r)=>{
+				var li = document.createElement("li")
+
+				var a = document.createElement("a")
+
+				a.dataset.regex = btoa(unescape(encodeURIComponent(r)))
+				a.setAttribute('href','#')
+				a.innerHTML = `
+					<span class="icon has-text-danger">
+					  <i class="fas fa-trash"></i>
+					</span>
+					<span>Remove "${r}" regex from the document.</span>
+				`
+
+				a.addEventListener("click",function(e){
+					var rmregex = decodeURIComponent(escape(atob(this.dataset.regex)))
+					regexes = regexes.filter(r => r != rmregex)
+					e.preventDefault();
+
+					renderRegexList()
+					
+					renderBlocks(applyBlocks())
+
+					return false
+				},false);  
+
+	    		li.appendChild(a); 
+	    		ul.appendChild(li); 
+
+
+			})
+	    	document.getElementById('regex-list').appendChild(ul); 
+
+
+
+
+
+    	}
+
+
+
+    	// events
+		document.getElementById("add-regex-button").addEventListener("click",function(e){
+			var pattern = document.getElementById("add-regex-pattern").value;
+
+			
+			regexes.push(pattern)
+			renderRegexList()
+			renderBlocks(applyBlocks())
+
+			e.preventDefault();
+			return false
+		},false);
+
+		document.getElementById("filter-select").addEventListener("change",function(e){
+			//var pattern = document.getElementById("add-regex-pattern").value;
+
+			var filter = this.options[this.selectedIndex].value
+
+			if (filter != 'Add a block filter' &&  filters.indexOf(filter) === -1){
+				filters.push(filter)
+			}
+
+			renderFilterList()
+
+			applyFilters()
+			e.preventDefault();
+			return false
+		},false);
+
+		document.getElementById("done").addEventListener("click",function(e){
+
+			var blocks = applyFilters().map((b)=>{return b.block})
+
+			console.log(blocks)
+
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "/ner", true);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onload = function () {
+			    // do something to response
+			    console.log(this.responseText);
+
+
+
+				var oReq = new XMLHttpRequest();
+				oReq.addEventListener("load", ()=>{
+
+					window.location =`/document/${docId}/ner/status`
+
+				});
+				oReq.open("GET", `/document/${docId}/ner/`);
+				oReq.send();
+
+		
+
+			}
+
+			
+			xhr.send(JSON.stringify({
+				id: docId,
+			    blocks: blocks,
+			    blockRegexes: regexes,
+			    blockFilters: filters
+			}));
+
+
+
+			e.preventDefault();
+			return false
+
+		},false);
+
+
+
+		var textClean = `<%= doc.textClean %>`;
+		var plugins = <%- pluginsJson %>;
+		var docId = '<%- doc.id%>';
+		renderBlocks(applyBlocks())
+
+
+
+    </script>
+
+
+</body>
+
+	<script type="application/javascript" src="/html/js/blocks.js"></script>
+	<script type="application/javascript" src="/html/js/palette.js"></script>
+
+	<% for (var key in plugins) { %>
+
+		<script type="application/javascript" src="/html/js/plugins/blocks/<%=plugins[key]%>"></script>
+
+
+	<% } %>
+
+
+</html>
