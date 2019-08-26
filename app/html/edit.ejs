@@ -42,7 +42,17 @@
 			margin-top: 1em;
 			margin-bottom: 1em;
 		}
+		#search-blocks{
+			font-size: 1.5rem;
+			display: block;
+			margin-top: 10px;
+			margin-bottom: 10px;
+			width: 99%;			
+		}
 
+		.blockSelect span:hover{
+			background-color: red;
+		}
 
 
 	</style>
@@ -64,13 +74,14 @@
 
 			</hr>
 
+				<input id="search-blocks" type="text" @keyup="updateSearchBlocks($event)" placeholder="Search blocks">
 
 
-			    <div  v-bind:class="{'block-highlight': block.highlight, 'block-hide': block.highlight===false, 'block': true}"  v-for="(block, indexBlock) in doc.blocksNerParsed">
+			    <div :style="wordSelect ? {'cursor': 'crosshair'} : {}" v-bind:class="{'block-highlight': block.highlight, 'block-hide': block.highlight===false, 'block': true, 'blockSelect':wordSelect}"  v-for="(block, indexBlock) in doc.blocksNerParsed">
 			      
 
 
-			      <span v-bind:class="{'word-highlight': blockWord.highlight}" :style="[wordIndexLookup[`${indexBlock}-${indexBlockWord}`] ? {'border-bottom-color': '#' + wordIndexLookup[indexBlock + '-' + indexBlockWord], 'border-bottom-style': 'solid', 'border-bottom-width': '3px'} : {} ]"  v-for="(blockWord, indexBlockWord) in block.wordIndex">{{blockWord.word}} </span>
+			      <span v-bind:class="{'word-highlight': blockWord.highlight}" :style="[wordIndexLookup[`${indexBlock}-${indexBlockWord}`] ? {'border-bottom-color': '#' + wordIndexLookup[indexBlock + '-' + indexBlockWord], 'border-bottom-style': 'solid', 'border-bottom-width': '3px', 'background-color': 'white'} : {} ]"  v-for="(blockWord, indexBlockWord) in block.wordIndex">{{blockWord.word}} </span>
 			    </div>
 
 
@@ -86,6 +97,7 @@
 				<div class="sub-menu" v-if="sideBar=='identity'">
 					<div class="identity"  v-for="i in doc.identities">
 						<span v-bind:style="{'display':'inline-block','height':'25px','width':'10px','background-color':'#' + i.color}"></span><span>{{i.label}}</span>
+						<button @click="deleteIdentity(i.id)" class="button is-small" title="Delete">Delete</button>
 					</div>
 				</div>
 
@@ -146,7 +158,11 @@
 
 
     <script>
+
+   		var config = <%- config %>;
+
     	var doc = <%- docjson %>;
+
 
 
     	var nerCompiledPeople = {}
@@ -187,10 +203,14 @@
 		  	sideBar: null,
 		  	showOn: false,
 		  	wordIndexLookup:{},
-		  	nerFilter: null
+		  	nerFilter: null,
+		  	blocksSearch: null,
+		  	wordSelect: false
 
 		  },
-
+		  mounted:function(){
+		        this.buildWordIndexLookup() //method1 will execute at pageload
+		  },
 			methods: 
 			  { 
 
@@ -219,6 +239,54 @@
 					}));
 
 			  	},
+
+			  	updateSearchBlocks: function(event) {
+					if (this.timeout) clearTimeout(this.timeout); 
+						this.timeout = setTimeout(() => {
+							// your action
+					  		this.$data.blocksSearch = event.target.value
+							var searchFor = this.$data.blocksSearch.toLowerCase()  
+							console.log(searchFor,searchFor)
+							if (searchFor.trim()==''){
+								
+
+								this.$data.doc.blocksNerParsed.forEach((b)=>{
+					     			Vue.set(b,'highlight',true)
+					     			b.wordIndex.forEach((w)=>{Vue.set(w,'highlight',false)})
+								})	
+
+
+
+							}else{
+
+						     	this.$data.doc.blocksNerParsed.forEach((b)=>{
+						     		if (b.text.toLowerCase().indexOf(searchFor) > -1){
+						     			Vue.set(b,'highlight',true)
+						     			b.wordIndex.forEach((w)=>{
+						     				if (w.word.toLowerCase().indexOf(searchFor)>-1){
+						     					Vue.set(w,'highlight',true)	
+						     					console.log(w)
+						     				}else{
+						     					Vue.set(w,'highlight',false)	
+						     				}
+						     			})
+
+						     		}else{
+						     			Vue.set(b,'highlight',false)
+						     			b.wordIndex.forEach((w)=>{Vue.set(w,'highlight',false)})
+						     		}
+						     	})
+
+
+							}
+
+
+
+					}, 500);
+				},
+
+
+
 			  	updateFilter: function(event){
 
 			  		this.$data.nerFilter = event.target.value
@@ -278,6 +346,12 @@
 			  		this.buildWordIndexLookup()
 
 			  	},
+			  	deleteIdentity : function(id)
+			    {
+			    	console.log(id,id,id,id,id,id,id,id)
+			    	this.$data.doc.identities = this.$data.doc.identities.filter(i => i.id != id);
+
+			    },	
 			    makeIdentity : function(per)
 			    {	
 			    	console.log("--->",per)
@@ -299,12 +373,9 @@
 			    	this.$data.doc.identities = this.$data.doc.identities.filter(Boolean);
 
 			    	this.$data.nerCompiledPeopleSorted.forEach((n)=>{
-
 			    		if (n.id == per.id){
-
 			    			n.identity = per.text
 			    		}
-
 			    	})
 
 			    	console.log(this.$data.nerCompiledPeopleSorted)
@@ -331,11 +402,10 @@
 			     {
 
 			     	this.$data.doc.blocksNerParsed.forEach((b)=>{
-			     		console.log(b)
 			     		Vue.set(b,'highlight',false)
 			     		b.wordIndex.forEach((w)=>{Vue.set(w,'highlight',false)})
 			     	})
-
+			     	console.log("This is the target")
 			     	console.log(target)
 			     	target.occ.forEach((o)=>{
 

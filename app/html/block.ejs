@@ -332,18 +332,17 @@
 			xhr.setRequestHeader('Content-Type', 'application/json');
 			xhr.onload = function () {
 			    // do something to response
-			    console.log(this.responseText);
 
+			    window.location =`/document/${docId}/ner/start`
 
+				// var oReq = new XMLHttpRequest();
+				// oReq.addEventListener("load", ()=>{
 
-				var oReq = new XMLHttpRequest();
-				oReq.addEventListener("load", ()=>{
+				// 	window.location =`/document/${docId}/ner/status`
 
-					window.location =`/document/${docId}/ner/status`
-
-				});
-				oReq.open("GET", `/document/${docId}/ner/`);
-				oReq.send();
+				// });
+				// oReq.open("GET", `/document/${docId}/ner/start/`);
+				// oReq.send();
 
 		
 

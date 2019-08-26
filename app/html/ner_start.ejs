@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" class="keep-it-100">
+<head>
+
+    <link rel="stylesheet" type="text/css" href="/html/css/bulma.min.css" >
+    <link rel="stylesheet" type="text/css" href="/html/css/ner.css" >
+
+</head>
+<body class="container is-fluid keep-it-100">
+
+
+
+    <script>
+
+
+
+
+    	var doc = "<%- docId %>";
+    	var status = <%- status %>;
+    	var totalBlocks = <%- totalBlocks %>;
+    	var processedBlocks = <%- processedBlocks %>;
+
+
+
+
+
+    </script>
+
+
+
+
+
+    <div class="container">
+        <br>
+        <p>Before we send <thead></thead> text to the NER engine we need to make sure it is online.</p>
+        <br>
+        <button id="test-button" class="button is-info">Test NER tool</button>
+        <br>
+
+        <div id="results"></div>
+    </div>
+
+
+
+
+
+    <script>
+
+        document.getElementById('test-button').addEventListener('click',(e)=>{
+
+            document.getElementById('results').innerHTML = "testing... please wait..."
+
+            var timeout = setTimeout(function(){
+                document.getElementById('results').innerHTML = "It doesn't look like the NER server is online. <a target=\"_blank\" href=\"http://tools.semlab.io\">Check server status</a> and try again."
+
+            },15000)
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "https://nerserver.semlab.io/compiled", true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                text: 'This is some test text from Matt Miller',
+                tool: ["spotlight", "stanford", "nltk", "spacy"]
+            }));
+            xhr.onload = function() {
+
+              clearTimeout(timeout)
+              
+              try{
+                  var data = JSON.parse(this.responseText);
+                  if (data && data.hasError === false){
+
+                    document.getElementById('results').innerHTML = '<br><br><br><a class="button is-success" href="/document/' + doc + '/ner">The NER tool is online, start</a>'
+
+
+                  }else{
+                    document.getElementById('results').innerHTML = "There was an error. The server or one of the components are not ready. Try again: <br> <code><pre>" + this.responseText +'</code></pre>'
+                  }
+
+              }catch{
+                    document.getElementById('results').innerHTML = "There was an error. The server or one of the components are not ready. Try again: <br> <code><pre>" + this.responseText +'</code></pre>'
+
+              }
+
+            }
+
+
+
+
+
+
+
+        })
+
+
+
+
+
+    </script>
+
+</body>
+
+
+
+
+</html>

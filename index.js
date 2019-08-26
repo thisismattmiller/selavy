@@ -10,6 +10,8 @@ const db    = require('./app/modules/db')
 const util    = require('./app/modules/util')
 const ner    = require('./app/modules/ner')
 
+const config = require('./app/modules/config')
+
 const Document = require('./app/models/document');
 
 
@@ -219,7 +221,8 @@ app.get('/document/:docId/ner',  function (req, res) {
 
 					if (doc.nerStatus ==0){
 						ner.processNer(docId)
-						res.status(200).send('OK - is 0')
+						// res.status(200).send('OK - is 0')
+						res.redirect('/document/'+docId+'/ner/status');
 					}else{
 						res.status(200).send(JSON.stringify(doc.nerStatus))
 					}					
@@ -231,7 +234,8 @@ app.get('/document/:docId/ner',  function (req, res) {
 
 				if (doc.nerStatus == 0){
 					ner.processNer(docId)
-					res.status(200).send('OK - is 0')
+					res.redirect('/document/'+docId+'/ner/status');
+					// res.status(200).send('OK - is 0')
 				}else{
 					res.status(200).send(JSON.stringify(doc.nerStatus))
 				}
@@ -274,6 +278,19 @@ app.get('/document/:docId/ner/status',  function (req, res) {
 		}
 	})
 })
+app.get('/document/:docId/ner/start',  function (req, res) {
+	docId = req.params.docId	
+	Document.findOne({ id: docId }, function (err, doc) {
+		if (!doc){
+			res.status(404).send("That document id was not found.")
+		}else{
+			res.render('ner_start',{docId: docId, status:doc.nerStatus, totalBlocks: doc.blocksRaw.length, processedBlocks:doc.blocksNer.length })
+
+
+		}
+	})
+})
+
 app.get('/document/:docId/parse',  function (req, res) {
 	docId = req.params.docId	
 	Document.findOne({ id: docId }, function (err, doc) {
@@ -454,7 +471,7 @@ app.get('/document/:docId/edit',  function (req, res) {
 
 					// res.status(200).send(JSON.stringify(doc.blocksNerParsed))
 									
-					res.render('edit',{doc: doc, docjson: JSON.stringify(doc) })
+					res.render('edit',{doc: doc, docjson: JSON.stringify(doc), config: JSON.stringify(config) })
 				}else{
 					res.status(401).send("You are not signed in or are not the owner of this document.")
 				}
@@ -462,7 +479,7 @@ app.get('/document/:docId/edit',  function (req, res) {
 				
 				// res.status(200).send(JSON.stringify(doc.blocksNerParsed))
 
-				res.render('edit',{doc: doc, docjson: JSON.stringify(doc) })
+				res.render('edit',{doc: doc, docjson: JSON.stringify(doc), config: JSON.stringify(config) })
 			}
 
 		}
