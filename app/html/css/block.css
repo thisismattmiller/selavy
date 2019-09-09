@@ -69,3 +69,11 @@ textarea{
 ul{
 	margin-top: 20px;
 }
+
+.block-toggleable:hover{
+	background-color: tomato;
+	cursor: pointer;
+}
+.manual-mode-element{
+	display: none;
+}

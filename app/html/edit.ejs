@@ -13,12 +13,16 @@
 
 	<style>
 
-		.per, .identity{
+		.per, .identity, .rdftype{
 			background-color: whitesmoke;
 			margin-bottom: 1em;
 			padding: 1em;
 			display: flex
 
+		}
+		.identity button, .rdftype button{
+			margin-left: 5px;
+			margin-right: 5px;
 		}
 		.per div{
 			flex:3;
@@ -51,7 +55,7 @@
 		}
 
 		.blockSelect span:hover{
-			background-color: red;
+			background-color: tomato;
 		}
 
 
@@ -81,7 +85,7 @@
 			      
 
 
-			      <span v-bind:class="{'word-highlight': blockWord.highlight}" :style="[wordIndexLookup[`${indexBlock}-${indexBlockWord}`] ? {'border-bottom-color': '#' + wordIndexLookup[indexBlock + '-' + indexBlockWord], 'border-bottom-style': 'solid', 'border-bottom-width': '3px', 'background-color': 'white'} : {} ]"  v-for="(blockWord, indexBlockWord) in block.wordIndex">{{blockWord.word}} </span>
+			      <span  @click="manualAddWordToIdentity(indexBlock,indexBlockWord)" v-bind:class="{'word-highlight': blockWord.highlight}" :style="[wordIndexLookup[`${indexBlock}-${indexBlockWord}`] ? {'border-bottom-color': '#' + wordIndexLookup[indexBlock + '-' + indexBlockWord], 'border-bottom-style': 'solid', 'border-bottom-width': '3px', 'background-color': 'white'} : {} ]"  v-for="(blockWord, indexBlockWord) in block.wordIndex">{{blockWord.word}} </span>
 			    </div>
 
 
@@ -89,16 +93,50 @@
 
 			<div class="column keep-it-100 is-one-third" id="filters-holder">
 
-				<button v-on:click="sideBar = 'identity'" class="button">Identities</button>
+				<button v-on:click="sideBar = 'identity'" class="button is-info">Identities</button>
 
 				<button v-on:click="sideBar = 'ner'" class="button is-warning">NER</button>
+				<button v-on:click="sideBar = 'type'" class="button is-primary">rdf:type</button>
+				<button v-on:click="sideBar = 'rules'" class="button is-success">Export Rules</button>
 
 
 				<div class="sub-menu" v-if="sideBar=='identity'">
+					<button v-on:click="makeBlankIdentity()" class="button is-small">Add Identity Manually</button>
 					<div class="identity"  v-for="i in doc.identities">
-						<span v-bind:style="{'display':'inline-block','height':'25px','width':'10px','background-color':'#' + i.color}"></span><span>{{i.label}}</span>
+						<span @click="selectWords(i.id)" v-bind:style="{'display':'inline-block','height':'25px','width':'25px','background-color':'#' + i.color, 'font-size':'25px', 'border': (wordSelect===i.id) ? 'solid 4px tomato' : 'none', 'margin-right': '0.5em' }"></span><span>{{i.label}}</span>
 						<button @click="deleteIdentity(i.id)" class="button is-small" title="Delete">Delete</button>
+						<button @click="assignUri(i.id)" v-bind:style="{'background-color': (!i.uri) ? 'coral' : ''}" class="button is-small" title="Delete">URI</button>
+				      	<div><select @change="assignRdfType(i,$event)">
+				      		<option>Assign Type</option>
+				      		<option v-for="r in doc.rdftypes" :selected="i.type===r.name">{{r.name}}</option>
+				      	</select></div>
 					</div>
+				</div>
+
+				<div class="sub-menu" v-if="sideBar=='type'" >
+					<button v-on:click="addType()" class="button is-small">Add Type</button>
+					<div class="rdftype"  v-for="r in doc.rdftypes">
+						<span>{{r.name}}</span>
+						<button @click="deleteType(r.id)" class="button is-small" title="Delete">Delete</button>
+					</div>
+
+				</div>
+				<div class="sub-menu" v-if="sideBar=='rules'" >
+
+						<select @change="changeRules('object',$event)">
+				      		<option>Object</option>
+				      		<option v-for="i in doc.identities" :selected="rulesSubject===i.id">{{i.label}}</option>
+				      	</select>
+
+						<input type="text"  @change="changeRules('predicate',$event)" :value="rulesPredicate" placeholder="Predicate URI" name="">
+
+						<select  @change="changeRules('subject',$event)">
+				      		<option>Type of Subject</option>
+				      		<option v-for="r in doc.rdftypes" :selected="rulesObject===r.id">{{r.name}}</option>
+				      	</select>
+						<button v-on:click="addRule()" class="button is-small">Add</button>
+
+
 				</div>
 
 				<div class="sub-menu" v-if="sideBar=='ner'" >
@@ -194,6 +232,29 @@
     	if (!doc.identities){
     		doc.identities = []
     	}
+    	if (!doc.rdftypes){
+    		doc.rdftypes = []
+    	}
+
+    	// some defaults
+    	doc.rdftypes.push(
+	    	{
+	    		id: 1,
+	    		name: 'Person',
+	    		uri: 'https://www.wikidata.org/entity/Q5'
+	    	},
+			{
+	    		id: 2,
+	    		name: 'Location',
+	    		uri: 'https://www.wikidata.org/entity/Q2221906'
+	    	},
+			{
+	    		id: 3,
+	    		name: 'Artwork',
+	    		uri: 'https://www.wikidata.org/entity/Q838948'
+	    	}	    	
+
+    	)
 
 		var app = new Vue({
 		  el: '#app',
@@ -205,7 +266,12 @@
 		  	wordIndexLookup:{},
 		  	nerFilter: null,
 		  	blocksSearch: null,
-		  	wordSelect: false
+		  	wordSelect: false,
+		  	manualIdentitiesIdCounter : 1000,
+		  	rulesSubject: -1,
+		  	rulesObject: -1,
+		  	rulesPredicate: ""
+
 
 		  },
 		  mounted:function(){
@@ -285,7 +351,71 @@
 					}, 500);
 				},
 
+				manualAddWordToIdentity: function(block,word){
 
+					if (this.$data.wordSelect !== false){
+						console.log(block,word)
+						console.log(word,this.$data.wordSelect)
+						console.log(this.$data.wordIndexLookup)
+						console.log(this.$data.doc.identities)
+						console.log(doc,"<<<")
+
+
+
+						var targetI = this.$data.doc.identities.filter( i => i.id == this.$data.wordSelect)[0]
+						targetI.manualWords.push({'b':block,'w':word})
+
+						console.log(">>>>>>>>!!!",targetI)
+						this.buildWordIndexLookup()
+
+					}else{
+						// remove word
+						if (confirm('Do you want to unlink this word from all identities?')){
+
+
+				  			this.$data.nerCompiledPeopleSorted.forEach((n)=>{
+				  					let replacement = []
+
+				  					n.occ.forEach((b)=>{
+				  						console.log(block,word)
+				  						console.log(b)
+				  						console.log(block, b.block, word, b.index.join())
+				  						if (block.toString() == b.block.toString() && word.toString() == b.index.join()){
+				  							// we are not adding this one because it matches
+				  						}else{
+				  							replacement.push(b)
+				  						}
+				  						
+				  					})
+
+				  					n.occ = replacement
+
+
+				  			})
+
+				  			// do the manual words
+				  			this.$data.doc.identities.forEach((i)=>{
+				  				let replacement = []
+				  				i.manualWords.forEach((mw)=>{
+			  						if (block.toString() == mw.b.toString() && word.toString() == mw.w.toString()){
+			  							// we are not adding this one because it matches
+			  						}else{
+			  							replacement.push(mw)
+			  						}
+				  				})
+
+				  				i.manualWords = replacement
+				  			})
+
+				  			this.buildWordIndexLookup()
+
+						}
+
+
+
+					}	
+
+				},
 
 			  	updateFilter: function(event){
 
@@ -308,9 +438,48 @@
 			  					})
 			  				}
 			  			})
+			  			// and the manual parts
+			  			i.manualWords.forEach((pos)=>{
+			  				this.$data.wordIndexLookup[pos.b + '-' + pos.w] = i.color
+
+			  			})
 
 			  		})
 			  	},
+
+
+			  	addType : function(){
+
+			  		let name = prompt("What is the type name or label?")
+			  		let uri = prompt("What is the type's URI")
+			  		let id = this.$data.doc.rdftypes.length+1
+
+			  		if (!name || !uri || id){
+			  			return false
+			  		}
+
+			  		this.$data.doc.rdftypes.push({
+			  			id: id,
+			  			name: name,
+			  			uri:uri
+			  		})
+
+
+
+			  	},			  	
+			  	assignRdfType: function(ident,event){
+
+			  		var targetValue = event.target.value
+			  		var targetI = this.$data.doc.identities.filter( i => i.id == ident.id)[0]
+
+			  		targetI.type = event.target.value
+
+			  		console.log(ident)
+			  		console.log(targetI)
+
+
+			  	},
+
 			  	assignIdentity: function(per,event){
 
 
@@ -348,10 +517,63 @@
 			  	},
 			  	deleteIdentity : function(id)
 			    {
-			    	console.log(id,id,id,id,id,id,id,id)
 			    	this.$data.doc.identities = this.$data.doc.identities.filter(i => i.id != id);
-
 			    },	
+			  	deleteType : function(id)
+			    {
+			    	this.$data.doc.rdftypes = this.$data.doc.rdftypes.filter(i => i.id != id);
+			    },	
+
+
+
+
+			    assignUri : function(id){
+			    	this.$data.doc.identities.forEach((i)=>{
+			    		if (i.id.toString() == id.toString()){
+			    			let uri = ""
+			    			if (i.uri){
+			    				uri = i.uri
+			    			}
+			    			let newUri = prompt('Assign URI',uri)
+			    			if (newUri){
+			    				i.uri = newUri
+			    			}
+			    		}
+			    	})
+
+			    },
+
+			    selectWords : function(id){
+
+			    	if (this.$data.wordSelect){
+			    		this.$data.wordSelect = false
+			    	}else{
+			    		this.$data.wordSelect = id
+			    	}
+			    	
+
+			    },
+
+			    makeBlankIdentity: function(){
+
+			    	let name = prompt("Enter the name for this identitiy")
+			    	if (!name){
+			    		return false
+			    	}
+
+			    	this.makeIdentity(
+			    		{
+			    			count: 0,
+			    			hidden: false,
+			    			id: this.$data.manualIdentitiesIdCounter++,
+			    			identity: null,
+			    			occ: [],
+			    			text: name
+			    		}
+
+			    	)
+
+			    },
 			    makeIdentity : function(per)
 			    {	
 			    	console.log("--->",per)
@@ -368,7 +590,7 @@
 
 
 			    	// var identities = this.$data.doc.identities
-			    	this.$data.doc.identities.push({color: seq[this.$data.doc.identities.length-1], blocks:[], linkedIdentities:[per.id],label:per.text,id:++this.$data.doc.identities.length})
+			    	this.$data.doc.identities.push({color: seq[this.$data.doc.identities.length-1], type:null, uri: false, blocks:[], linkedIdentities:[per.id],label:per.text,id:++this.$data.doc.identities.length, manualWords:[]})
 			    		
 			    	this.$data.doc.identities = this.$data.doc.identities.filter(Boolean);
 

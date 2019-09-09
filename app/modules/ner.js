@@ -55,6 +55,8 @@ exports.processNer = function(docId){
 		})
 
 
+
+
 		async.mapLimit(allBlocks, 5, async function(block) {
 			const options = {
 			method: 'POST'
@@ -63,6 +65,8 @@ exports.processNer = function(docId){
 			,uri: 'https://nerserver.semlab.io/compiled'
 			,body: { "tool":["spotlight","stanford","nltk","spacy"], "text": block }
 			};
+			console.log(options)
+
 
 			try {
     			const response = await request(options);

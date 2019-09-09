@@ -21,7 +21,9 @@ var Document = new Schema({
 	blockRegexes: [],
 	blockFilters: [],
 	nerStatus: { type: Number, default: 0 },
-	identities: []
+	identities: [],
+	rdftypes: [],
+	exportRules: []
 });
 
 //{blocks:[],label:String,type:String, color:String, linkedIdentities:[], id:Number}
