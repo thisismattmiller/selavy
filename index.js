@@ -486,6 +486,136 @@ app.get('/document/:docId/edit',  function (req, res) {
 	})
 })
 
+app.get('/document/:docId/export',  function (req, res) {
+	docId = req.params.docId	
+	Document.findOne({ id: docId }, function (err, doc) {
+		if (!doc){
+			res.status(404).send("That document id was not found.")
+		}else{
+
+
+			// res.set("Content-Disposition", "attachment;filename=docId.json");
+			var ex = {}
+			ex.blocks = []
+
+			var subjectMap = {}
+			var subjectMapType = {}
+			doc.identities.forEach((i)=>{
+				subjectMap[i.label] = i.uri
+				subjectMapType[i.label] = i.type
+
+				if (subjectMap[i.label] == null || subjectMap[i.label] == ''){
+					subjectMap[i.label] = 'NOURIERROR'
+				}
+
+			})
+
+
+			doc.blocksNerParsed.forEach((b)=>{
+				block = {}
+				block.identities = []
+				block.triples = []
+
+
+				doc.identities.forEach((i)=>{
+
+
+					i.manualWords.forEach((mw)=>{
+						if (mw.b.toString() == b.order.toString()){
+							block.identities.push({identLabel: i.label, identUri: i.uri, identType: i.type, identId: i.id, found: mw.w})
+						}
+
+					})
+
+					i.linkedIdentities.forEach((li)=>{
+						doc.nerCompiledPeopleSorted.forEach((nerCP)=>{
+
+							nerCP.occ.forEach((occ)=>{
+								if (occ.block === b.order && nerCP.id == li){
+
+									occ.index.forEach((occIndex)=>{
+
+
+										occIndex.forEach((occIndexW) =>{
+											block.identities.push({identLabel: i.label, identUri: i.uri, identType: i.type, identId: i.id, found: occIndexW})
+
+
+										})
+
+									})
+									
+								}
+							})
+
+						})
+					})
+
+
+				})
+
+
+
+
+				doc.exportRules.forEach((r)=>{
+
+					var addedIdents = []
+
+
+					if (r.block=='All' || r.block.toString() == b.order.toString()){
+
+
+						block.identities.forEach((i)=>{
+
+							if (i.identType == r.object){
+								let t = {
+
+									's': subjectMap[r.subject],
+									'p': r.predicate,
+									'o': i.identUri 
+
+
+								}
+								if (addedIdents.indexOf(t.s+t.p+t.o)==-1){
+									block.triples.push(t)
+									addedIdents.push(t.s+t.p+t.o)									
+								}
+
+
+							}
+
+						})
+
+
+					}
+
+
+
+				})
+
+				
+			
+
+
+
+				block.id = b.order
+				block.text = b.text
+				
+
+
+				ex.blocks.push(block)
+			})
+			
+
+
+
+
+			res.status(200).json(ex)
+
+
+		}
+	})
+})
+
 app.post('/saveedit',  function (req, res) {
 	docId = req.body.id
 	Document.findOne({ id: docId }, function (err, doc) {
@@ -496,6 +626,12 @@ app.post('/saveedit',  function (req, res) {
 				if (req.isAuthenticated() && req.user.email == doc.owner){
 					// res.render('clean')
 					doc.identities = req.body.identities
+					doc.rdftypes = req.body.rdftypes
+					doc.nerCompiledPeopleSorted = req.body.nerCompiledPeopleSorted
+					doc.exportRules = req.body.exportRules
+
+
+
 					doc.save(function (err) {
 					  if (err){
 					  	res.status(500).send(err)
@@ -511,6 +647,11 @@ app.post('/saveedit',  function (req, res) {
 			}else{
 				// res.render('clean',{doc: doc})
 				doc.identities = req.body.identities
+				doc.rdftypes = req.body.rdftypes
+				doc.nerCompiledPeopleSorted = req.body.nerCompiledPeopleSorted
+				doc.exportRules = req.body.exportRules
+
+
 				doc.save(function (err) {
 				  if (err){
 				  	res.status(500).send(err)

@@ -50,10 +50,10 @@ exports.processNer = function(docId){
 		blocksCount = doc.blocksRaw.length
 		var allBlocks = []
 
-		doc.blocksRaw.forEach((b)=>{
-			allBlocks.push(b[0])
-		})
+		doc.blocksRaw.forEach((b, idx)=>{
 
+			allBlocks.push({'text':b.join(' '),'order':idx})
+		})
 
 
 
@@ -63,9 +63,8 @@ exports.processNer = function(docId){
 			,rejectUnauthorized: false
 			,json: true
 			,uri: 'https://nerserver.semlab.io/compiled'
-			,body: { "tool":["spotlight","stanford","nltk","spacy"], "text": block }
+			,body: { "tool":["spotlight","stanford","nltk","spacy"], "text": block.text }
 			};
-			console.log(options)
 
 
 			try {
@@ -83,12 +82,13 @@ exports.processNer = function(docId){
 
 	    			})
 	    		}
-		    	allResults.push({text: block, results: results})
+		    	allResults.push({text: block.text, results: results, order: block.order})
 			    return response
 
 			} catch (error) {
 				console.log("Error----------")
 				console.log(error);
+				console.log(options)
 				console.log("Error----------")
 				return null
 			}   

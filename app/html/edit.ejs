@@ -30,6 +30,20 @@
 		.per button{
 			flex:1;
 		}
+		.block{
+			position: relative;
+		}
+		.blockRullLink{
+position: absolute;
+    right: 0;
+    bottom: 0;		
+    display: none;	
+		}
+
+		.block:hover .blockRullLink{
+		    display: block;
+		}
+
 
 		.block-word:hover{
 
@@ -76,16 +90,17 @@
 				<a href="dump" class="button">download</a>
 				<button v-on:click="save()" class="button">save</button>
 
+				<a href="export" style="float:right" target="_blank" class="button">export</a>
 			</hr>
 
 				<input id="search-blocks" type="text" @keyup="updateSearchBlocks($event)" placeholder="Search blocks">
 
 
-			    <div :style="wordSelect ? {'cursor': 'crosshair'} : {}" v-bind:class="{'block-highlight': block.highlight, 'block-hide': block.highlight===false, 'block': true, 'blockSelect':wordSelect}"  v-for="(block, indexBlock) in doc.blocksNerParsed">
-			      
+			    <div :style="wordSelect ? {'cursor': 'crosshair'} : {}" v-bind:class="{'block-highlight': block.highlight, 'block-hide': block.highlight===false, 'block': true, 'blockSelect':wordSelect}"  v-for="(block) in sortedBlocksNerParsed">
+			      <a href="#" @click="setRuleBlock(block.order, $event)" class="blockRullLink">Block {{block.order}}</a>
 
 
-			      <span  @click="manualAddWordToIdentity(indexBlock,indexBlockWord)" v-bind:class="{'word-highlight': blockWord.highlight}" :style="[wordIndexLookup[`${indexBlock}-${indexBlockWord}`] ? {'border-bottom-color': '#' + wordIndexLookup[indexBlock + '-' + indexBlockWord], 'border-bottom-style': 'solid', 'border-bottom-width': '3px', 'background-color': 'white'} : {} ]"  v-for="(blockWord, indexBlockWord) in block.wordIndex">{{blockWord.word}} </span>
+			      <span  @click="manualAddWordToIdentity(block.order,indexBlockWord)" v-bind:class="{'word-highlight': blockWord.highlight}" :style="[wordIndexLookup[`${block.order}-${indexBlockWord}`] ? {'border-bottom-color': '#' + wordIndexLookup[block.order + '-' + indexBlockWord], 'border-bottom-style': 'solid', 'border-bottom-width': '3px', 'background-color': 'white'} : {} ]"  v-for="(blockWord, indexBlockWord) in block.wordIndex">{{blockWord.word}} </span>
 			    </div>
 
 
@@ -123,33 +138,64 @@
 				</div>
 				<div class="sub-menu" v-if="sideBar=='rules'" >
 
-						<select @change="changeRules('object',$event)">
-				      		<option>Object</option>
+						<span>Span:</span><select @change="changeRules('block',$event)">
+				      		<option>All</option>
+				      		<option v-for="i in sortedBlocksNerParsed" :selected="rulesBlock===i.order">{{i.order}}</option>
+				      	</select>
+				      	<br/>
+
+						<select  @change="changeRules('subject',$event)">
+				      		<option>Subject</option>
 				      		<option v-for="i in doc.identities" :selected="rulesSubject===i.id">{{i.label}}</option>
+
 				      	</select>
 
 						<input type="text"  @change="changeRules('predicate',$event)" :value="rulesPredicate" placeholder="Predicate URI" name="">
 
-						<select  @change="changeRules('subject',$event)">
-				      		<option>Type of Subject</option>
+
+						<select @change="changeRules('object',$event)">
+
+				      		<option>Type of Object</option>
 				      		<option v-for="r in doc.rdftypes" :selected="rulesObject===r.id">{{r.name}}</option>
+
 				      	</select>
+
+
 						<button v-on:click="addRule()" class="button is-small">Add</button>
 
+						<hr>
+
+			    		<div class="per"  v-for="rule in doc.exportRules">
+			    			Block {{rule.block}}:<br>
+			    			<code>
+			    				&lt;{{rule.subject}}&gt;
+			    				&lt;{{rule.predicate}}&gt;
+			    				&lt;{{rule.object}}&gt;
+
+			    			</code>
+			    			<button style="width:50px;" v-on:click="delRule(rule.id)">Del</button>
+
+
+			    		</div>
 
 				</div>
 
 				<div class="sub-menu" v-if="sideBar=='ner'" >
 					<button v-on:click="clearHighlight()" class="button is-small">Clear Highlight</button>
 					<button v-on:click="clearHidden()" class="button is-small">Show Hidden</button>
-					<input type="text" placeholder="filter" @keyup="updateFilter($event)">
+					<input type="text" placeholder="search ner" style="height: 27px;" @keyup="updateFilter($event)">
+					<select style="height: 26px; background-color: white;" @change="filterNerType($event)">
+						<option>Filter Type</option>
+						<option v-for="r in sideBarNerTypeOptions" :selected="sideBarNerType===r">{{r}}</option>
+					</select>
+
 
 
 				</div>
 
 				
 
-			    <div class="per"  v-if="sideBar=='ner' && per.hidden != true && (nerFilter && per.text.toLowerCase().indexOf(nerFilter.toLowerCase()) > -1 || !nerFilter )" v-for="per in nerCompiledPeopleSorted">
+			    <div class="per"  v-if="sideBar=='ner' && per.hidden != true && per.type == sideBarNerType && (nerFilter && per.text.toLowerCase().indexOf(nerFilter.toLowerCase()) > -1 || !nerFilter )" v-for="per in nerCompiledPeopleSorted">
 
 					<div>{{per.count}} {{per.text}}</div>
 			      	
@@ -204,30 +250,43 @@
 
 
     	var nerCompiledPeople = {}
+    	var sideBarNerTypeOptions = []
 
-    	var blockCount = 0
+    	// var blockCount = 0
     	doc.blocksNerParsed.forEach((b)=>{
     		b.results.forEach((r)=>{
     			if (r.confidence >= 50){
+    				
     				if (!nerCompiledPeople[r.text]){
     					nerCompiledPeople[r.text] = {id: Object.keys(nerCompiledPeople).length, identity: null, count:0,occ:[], identity:null, hidden:false}
     				}
 
     				nerCompiledPeople[r.text].count++
     				nerCompiledPeople[r.text].text = r.text;
-    				nerCompiledPeople[r.text].occ.push({block:blockCount,index:r.matchIndex})
+    				nerCompiledPeople[r.text].type = r.typeMode;
+    				if (sideBarNerTypeOptions.indexOf(r.typeMode)==-1){
+    					sideBarNerTypeOptions.push(r.typeMode)
+    				}
+    				nerCompiledPeople[r.text].occ.push({block:b.order,index:r.matchIndex})
 
     			}
 
     		})
     		
 
-    		blockCount++;
+    		// blockCount++;
     	})
 
-    	console.log(nerCompiledPeople)
 
-    	const nerCompiledPeopleSorted = Object.values(nerCompiledPeople).sort((a, b) =>  b.count - a.count);
+    	if (doc.nerCompiledPeopleSorted.length>0){
+    		var nerCompiledPeopleSorted = doc.nerCompiledPeopleSorted
+    	}else{
+
+    		var nerCompiledPeopleSorted = Object.values(nerCompiledPeople).sort((a, b) =>  b.count - a.count);
+
+    	}
+
+    	
 
     	if (!doc.identities){
     		doc.identities = []
@@ -235,26 +294,41 @@
     	if (!doc.rdftypes){
     		doc.rdftypes = []
     	}
+    	if (!doc.exportRules){
+    		doc.exportRules = []
+    	}
 
     	// some defaults
-    	doc.rdftypes.push(
-	    	{
+    	if (doc.rdftypes.map((t)=>{return t.name}).indexOf('Person')==-1){
+    		doc.rdftypes.push(
+    			{
 	    		id: 1,
 	    		name: 'Person',
 	    		uri: 'https://www.wikidata.org/entity/Q5'
-	    	},
-			{
+	    	}
+	    	)
+    	}
+    	if (doc.rdftypes.map((t)=>{return t.name}).indexOf('Location')==-1){
+    		doc.rdftypes.push(
+    		{
 	    		id: 2,
 	    		name: 'Location',
 	    		uri: 'https://www.wikidata.org/entity/Q2221906'
-	    	},
-			{
+	    	}
+	    	)
+    	}
+    	if (doc.rdftypes.map((t)=>{return t.name}).indexOf('Artwork')==-1){
+    		doc.rdftypes.push(
+    		{
 	    		id: 3,
 	    		name: 'Artwork',
 	    		uri: 'https://www.wikidata.org/entity/Q838948'
-	    	}	    	
+	    	}
+	    	)
+    	}    	
 
-    	)
+    	console.log(doc)
+   
 
 		var app = new Vue({
 		  el: '#app',
@@ -262,18 +336,37 @@
 		  	doc:doc,
 		  	nerCompiledPeopleSorted: nerCompiledPeopleSorted,
 		  	sideBar: null,
+		  	sideBarNerType: "per",
+		  	sideBarNerTypeOptions:sideBarNerTypeOptions,
 		  	showOn: false,
 		  	wordIndexLookup:{},
 		  	nerFilter: null,
 		  	blocksSearch: null,
 		  	wordSelect: false,
 		  	manualIdentitiesIdCounter : 1000,
-		  	rulesSubject: -1,
-		  	rulesObject: -1,
-		  	rulesPredicate: ""
+		  	rulesBlock: "All",
+		  	rulesSubject: "Type of Subject",
+		  	rulesObject: "Object",
+		  	rulesPredicate: "",
+
 
 
 		  },
+			computed: {
+			  sortedBlocksNerParsed: function() {
+			    function compare(a, b) {
+			      if (a.order < b.order)
+			        return -1;
+			      if (a.order > b.order)
+			        return 1;
+			      return 0;
+			    }
+
+			    return this.doc.blocksNerParsed.sort(compare);
+			  }
+			},
+
+
 		  mounted:function(){
 		        this.buildWordIndexLookup() //method1 will execute at pageload
 		  },
@@ -283,7 +376,7 @@
 			  	save: function(){
 
 			  		var doc = this.$data.doc
-
+			  		console.log(doc)
 					var xhr = new XMLHttpRequest();
 					xhr.open("POST", "/saveedit", true);
 					xhr.setRequestHeader('Content-Type', 'application/json');
@@ -301,7 +394,10 @@
 					
 					xhr.send(JSON.stringify({
 						id:doc.id,
-					    identities: doc.identities
+					    identities: doc.identities,
+					    rdftypes: doc.rdftypes,
+					    nerCompiledPeopleSorted: nerCompiledPeopleSorted,
+					    exportRules: doc.exportRules
 					}));
 
 			  	},
@@ -312,7 +408,7 @@
 							// your action
 					  		this.$data.blocksSearch = event.target.value
 							var searchFor = this.$data.blocksSearch.toLowerCase()  
-							console.log(searchFor,searchFor)
+							
 							if (searchFor.trim()==''){
 								
 
@@ -369,6 +465,12 @@
 						this.buildWordIndexLookup()
 
 					}else{
+
+						// check to see if this word is in possiblities
+						if (!this.$data.wordIndexLookup[block+'-'+word]){
+							return false
+						}
+
 						// remove word
 						if (confirm('Do you want to unlink this word from all identities?')){
 
@@ -377,12 +479,43 @@
 				  					let replacement = []
 
 				  					n.occ.forEach((b)=>{
-				  						console.log(block,word)
-				  						console.log(b)
-				  						console.log(block, b.block, word, b.index.join())
+
+				  						// console.log(block, b.block, word, b.index.join(','), b.index.map((v)=>{return v.indexOf(word);}), b.index.indexOf(word), b.index.indexOf(word.toString()) )
+				  						
 				  						if (block.toString() == b.block.toString() && word.toString() == b.index.join()){
 				  							// we are not adding this one because it matches
 				  						}else{
+
+
+				  							if (block.toString() == b.block.toString()){
+					  							var replacementObv = []
+					  							var needsReplacement = false
+					  							b.index.forEach((wordval)=>{
+					  								// console.log("\t",wordval)
+					  								var tempAry = []
+					  								wordval.forEach((wordvalVal)=>{
+
+					  									if (wordvalVal==word){
+					  										needsReplacement = true
+					  										console.log(block,b.block)
+					  										console.log("\t",wordval)
+					  										console.log("\t\t",wordvalVal)
+					  									}else{
+					  										tempAry.push(wordvalVal)
+					  										
+					  									}
+
+
+					  								})
+					  								replacementObv.push(tempAry)
+					  							})
+
+					  							if (needsReplacement){
+					  								b.index = replacementObv
+					  							}
+
+				  							}
+
 				  							replacement.push(b)
 				  						}
 				  						
@@ -416,7 +549,50 @@
 					}	
 
 				},
+			  	changeRules: function(pieceOfRule, event){
 
+			  		if (pieceOfRule == 'block'){
+			  			this.$data.rulesBlock = event.target.value
+
+			  		}else if(pieceOfRule == 'object'){
+			  			this.$data.rulesObject = event.target.value
+
+			  		}else if(pieceOfRule == 'predicate'){
+			  			this.$data.rulesPredicate= event.target.value
+			  		}else if(pieceOfRule == 'subject'){
+			  			this.$data.rulesSubject  = event.target.value
+			  		}
+			  		
+
+			  	},
+
+			  	addRule: function(event){
+
+
+			  		this.$data.doc.exportRules.push({
+			  			block:this.$data.rulesBlock,
+			  			subject: this.$data.rulesSubject,
+			  			predicate: this.$data.rulesPredicate,
+			  			object: this.$data.rulesObject,
+			  			id: (this.$data.doc.exportRules.length+1)
+			  		})
+
+			  	},
+			  	delRule: function(ruleId){
+
+
+			  		this.$data.doc.exportRules = this.$data.doc.exportRules.filter( i => i.id != ruleId)
+
+			  	},
+
+
+			  	setRuleBlock: function(blockId,event){
+			  		console.log(blockId,event)
+			  		this.$data.rulesBlock = blockId
+			  		event.preventDefault()
+
+			  	},
+			  	
 			  	updateFilter: function(event){
 
 			  		this.$data.nerFilter = event.target.value
@@ -454,7 +630,7 @@
 			  		let uri = prompt("What is the type's URI")
 			  		let id = this.$data.doc.rdftypes.length+1
 
-			  		if (!name || !uri || id){
+			  		if (!name || !uri || !id){
 			  			return false
 			  		}
 
@@ -524,7 +700,10 @@
 			    	this.$data.doc.rdftypes = this.$data.doc.rdftypes.filter(i => i.id != id);
 			    },	
 
+			    filterNerType: function(event){
 
+			    	this.$data.sideBarNerType = event.target.value
+			    },
 
 
 			    assignUri : function(id){

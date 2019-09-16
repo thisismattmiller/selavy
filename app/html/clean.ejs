@@ -21,7 +21,12 @@
 
 		  <div class="column keep-it-100 is-one-half textarea-holder">
 		    <textarea name="text" id="text">
-		    	<%= doc.textRaw %>
+		    	<% if (doc.textClean) { %>
+		    		<%= doc.textClean %>
+		    	<% }else{ %>
+		    		<%= doc.textRaw %>
+		    	<% } %>
+		    	
 		    </textarea>
 
 		  </div>
@@ -57,6 +62,11 @@
 
 		    <input type="hidden" name="id" id="id" value="<%= doc.id%>">
 
+
+
+		    <% if (doc.textClean) { %>
+		    	<div style="color:tomato; margin: 20px;">The text has already been processed/cleaned. That cleaned text is being used for further refinement. To use the orignal raw text re-upload the document.</div>
+		    <% } %>
 			<button class="button is-link" action="submit" id="done">Finished</button>
 
 

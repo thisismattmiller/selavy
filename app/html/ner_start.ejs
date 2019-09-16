@@ -58,7 +58,7 @@
             xhr.open("POST", "https://nerserver.semlab.io/compiled", true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify({
-                text: 'This is some test text from Matt Miller',
+                text: 'This is some test text from Semantic Lab doing document processing okay New York. United States whatever!',
                 tool: ["spotlight", "stanford", "nltk", "spacy"]
             }));
             xhr.onload = function() {

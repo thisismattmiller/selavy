@@ -50,6 +50,13 @@ textarea{
 	right: 25px;
 	bottom: 25px;
 }
+#back{
+	position: absolute;
+	right: 150px;
+	bottom: 25px;
+
+
+}
 
 #blocks-holder{
 	overflow-y: scroll;

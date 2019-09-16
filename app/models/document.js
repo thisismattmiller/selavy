@@ -16,14 +16,15 @@ var Document = new Schema({
 	entities: [{ text: String, uri: String, type: String, addedBy: String }],
 	entityMap: [{ entity: String, words: [] }],
 	blocksRaw: [],
-	blocksNer: [{text: String, wordIndex: [{word:String, wordF:String, index:Number}], results: [ {text:String, entityType: [{type: String}], spotlightUri: String, tool: [{type: String}], confidence: Number, typeMode: String, matchIndex: [] }  ]}],
-	blocksNerParsed: [{text: String, wordIndex: [{word:String, wordF:String, index:Number}], results: [ {text:String, entityType: [{type: String}], spotlightUri: String, tool: [{type: String}], confidence: Number, typeMode: String, matchIndex: [] }  ]}],
+	blocksNer: [{text: String, order: Number, wordIndex: [{word:String, wordF:String, index:Number}], results: [ {text:String, entityType: [{type: String}], spotlightUri: String, tool: [{type: String}], confidence: Number, typeMode: String, matchIndex: [] }  ]}],
+	blocksNerParsed: [{text: String, order: Number, wordIndex: [{word:String, wordF:String, index:Number}], results: [ {text:String, entityType: [{type: String}], spotlightUri: String, tool: [{type: String}], confidence: Number, typeMode: String, matchIndex: [] }  ]}],
 	blockRegexes: [],
 	blockFilters: [],
 	nerStatus: { type: Number, default: 0 },
 	identities: [],
 	rdftypes: [],
-	exportRules: []
+	exportRules: [],
+	nerCompiledPeopleSorted: []
 });
 
 //{blocks:[],label:String,type:String, color:String, linkedIdentities:[], id:Number}
