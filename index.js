@@ -219,26 +219,53 @@ app.get('/document/:docId/ner',  function (req, res) {
 			if (doc.owner != ''){
 				if (req.isAuthenticated() && req.user.email == doc.owner){
 
-					if (doc.nerStatus ==0){
+
+					doc.nerStatus = 0
+					doc.identities = []
+					doc.rdftypes = []
+					doc.exportRules = []
+					doc.nerCompiledPeopleSorted = []
+					doc.blocksNer=[]
+					doc.blocksNerParsed=[]
+					doc.save(function (err) {
+					  if (err){
+					  	res.status(500).send(err)
+					  }else{
+					  	
 						ner.processNer(docId)
 						// res.status(200).send('OK - is 0')
 						res.redirect('/document/'+docId+'/ner/status');
-					}else{
-						res.status(200).send(JSON.stringify(doc.nerStatus))
-					}					
+
+					  }
+					  
+					});
+
+				
 					// res.render('ner',{doc: doc})
 				}else{
 					res.status(401).send("You are not signed in or are not the owner of this document.")
 				}
 			}else{
 
-				if (doc.nerStatus == 0){
-					ner.processNer(docId)
-					res.redirect('/document/'+docId+'/ner/status');
-					// res.status(200).send('OK - is 0')
-				}else{
-					res.status(200).send(JSON.stringify(doc.nerStatus))
-				}
+					doc.nerStatus = 0
+					doc.identities = []
+					doc.rdftypes = []
+					doc.exportRules = []
+					doc.nerCompiledPeopleSorted = []
+					doc.blocksNer=[]
+					doc.blocksNerParsed=[]
+					doc.save(function (err) {
+					  if (err){
+					  	res.status(500).send(err)
+					  }else{
+					  	
+						ner.processNer(docId)
+						// res.status(200).send('OK - is 0')
+						res.redirect('/document/'+docId+'/ner/status');
+
+					  }
+					  
+					});
 				// res.render('ner',{doc: doc, docjson: JSON.stringify(doc) })
 			}
 

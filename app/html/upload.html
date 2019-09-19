@@ -7,6 +7,7 @@
   <title></title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="/html/css/bulma.min.css" >
 
   <link rel="manifest" href="site.webmanifest">
   <link rel="apple-touch-icon" href="icon.png">
@@ -21,10 +22,52 @@
 
 
 
+
+
+     <section class="section">
+        <div class="container">
+          <nav class="navbar" role="navigation" aria-label="main navigation">
+          </nav>
+
+
+
 <form action="/upload" method="post" enctype="multipart/form-data">
-  <input type="file" name="file" />
-  <button action="submit">Upload</button>
+
+Select a file to upload to the server to work.
+<div class="file">
+  <label class="file-label">
+    <input class="file-input" type="file" name="file">
+    <span class="file-cta">
+      <span class="file-icon">
+        <i class="fas fa-upload"></i>
+      </span>
+      <span class="file-label">
+        Choose a file…
+      </span>
+    </span>
+  </label>
+  <button class="button is-primary" style="margin-left: 25px" action="submit">Upload</button>
+</div>
+
+
+  
 </form>
+
+
+
+
+
+        </div>
+
+
+
+      </section>
+
+
+
+
+
+
 
 
 

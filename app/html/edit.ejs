@@ -327,7 +327,7 @@ position: absolute;
 	    	)
     	}    	
 
-    	console.log(doc)
+    	// console.log(doc)
    
 
 		var app = new Vue({
@@ -376,16 +376,18 @@ position: absolute;
 			  	save: function(){
 
 			  		var doc = this.$data.doc
-			  		console.log(doc)
+			  		// console.log(doc)
 					var xhr = new XMLHttpRequest();
 					xhr.open("POST", "/saveedit", true);
 					xhr.setRequestHeader('Content-Type', 'application/json');
 					xhr.onload = function () {
 					    // do something to response
-					    console.log(this.responseText);
+					    // console.log(this.responseText);
 
+					    var oldItems = JSON.parse(localStorage.getItem('selavySaved')) || [];
 
-
+					    oldItems.push(doc.id)
+					    localStorage.setItem('selavySaved', JSON.stringify(oldItems));
 
 				
 
@@ -427,7 +429,7 @@ position: absolute;
 						     			b.wordIndex.forEach((w)=>{
 						     				if (w.word.toLowerCase().indexOf(searchFor)>-1){
 						     					Vue.set(w,'highlight',true)	
-						     					console.log(w)
+						     					// console.log(w)
 						     				}else{
 						     					Vue.set(w,'highlight',false)	
 						     				}
@@ -450,18 +452,18 @@ position: absolute;
 				manualAddWordToIdentity: function(block,word){
 
 					if (this.$data.wordSelect !== false){
-						console.log(block,word)
-						console.log(word,this.$data.wordSelect)
-						console.log(this.$data.wordIndexLookup)
-						console.log(this.$data.doc.identities)
-						console.log(doc,"<<<")
+						// console.log(block,word)
+						// console.log(word,this.$data.wordSelect)
+						// console.log(this.$data.wordIndexLookup)
+						// console.log(this.$data.doc.identities)
+						// console.log(doc,"<<<")
 
 
 
 						var targetI = this.$data.doc.identities.filter( i => i.id == this.$data.wordSelect)[0]
 						targetI.manualWords.push({'b':block,'w':word})
 
-						console.log(">>>>>>>>!!!",targetI)
+						// console.log(">>>>>>>>!!!",targetI)
 						this.buildWordIndexLookup()
 
 					}else{
@@ -480,7 +482,7 @@ position: absolute;
 
 				  					n.occ.forEach((b)=>{
 
-				  						// console.log(block, b.block, word, b.index.join(','), b.index.map((v)=>{return v.indexOf(word);}), b.index.indexOf(word), b.index.indexOf(word.toString()) )
+				  						console.log(block, b.block, word, b.index.join(','), b.index.map((v)=>{return v.indexOf(word);}), b.index.indexOf(word), b.index.indexOf(word.toString()) )
 				  						
 				  						if (block.toString() == b.block.toString() && word.toString() == b.index.join()){
 				  							// we are not adding this one because it matches
@@ -491,15 +493,15 @@ position: absolute;
 					  							var replacementObv = []
 					  							var needsReplacement = false
 					  							b.index.forEach((wordval)=>{
-					  								// console.log("\t",wordval)
+					  								console.log("\t",wordval)
 					  								var tempAry = []
 					  								wordval.forEach((wordvalVal)=>{
 
 					  									if (wordvalVal==word){
 					  										needsReplacement = true
-					  										console.log(block,b.block)
-					  										console.log("\t",wordval)
-					  										console.log("\t\t",wordvalVal)
+					  										// console.log(block,b.block)
+					  										// console.log("\t",wordval)
+					  										// console.log("\t\t",wordvalVal)
 					  									}else{
 					  										tempAry.push(wordvalVal)
 					  										
@@ -587,7 +589,7 @@ position: absolute;
 
 
 			  	setRuleBlock: function(blockId,event){
-			  		console.log(blockId,event)
+			  		// console.log(blockId,event)
 			  		this.$data.rulesBlock = blockId
 			  		event.preventDefault()
 
@@ -650,8 +652,8 @@ position: absolute;
 
 			  		targetI.type = event.target.value
 
-			  		console.log(ident)
-			  		console.log(targetI)
+			  		// console.log(ident)
+			  		// console.log(targetI)
 
 
 			  	},
@@ -686,7 +688,7 @@ position: absolute;
 						})
 			  		}
 
-			  		console.log(this.$data.doc.identities)
+			  		// console.log(this.$data.doc.identities)
 			  		
 			  		this.buildWordIndexLookup()
 
@@ -755,10 +757,10 @@ position: absolute;
 			    },
 			    makeIdentity : function(per)
 			    {	
-			    	console.log("--->",per)
+			    	// console.log("--->",per)
 			    	
 			    	var names = this.$data.doc.identities.map((x)=>{return x.label})
-			    	console.log(names)
+			    	// console.log(names)
 
 			    	if (names.indexOf(per.text)>-1){
 			    		alert("You already have a " + per.text + ' in the identites')
@@ -779,11 +781,11 @@ position: absolute;
 			    		}
 			    	})
 
-			    	console.log(this.$data.nerCompiledPeopleSorted)
+			    	// console.log(this.$data.nerCompiledPeopleSorted)
 
 
 			    	// Vue.set(this.$data.doc,'identities',identities)
-			    	console.log(this.$data.doc.identities)
+			    	// console.log(this.$data.doc.identities)
 			    	this.buildWordIndexLookup()
 			    },
 	 			clearHidden : function(){
@@ -794,7 +796,7 @@ position: absolute;
 
 			  	 clearHighlight : function(){
 			     	this.$data.doc.blocksNerParsed.forEach((b)=>{
-			     		console.log(b)
+			     		// console.log(b)
 			     		Vue.set(b,'highlight',undefined)
 			     		b.wordIndex.forEach((w)=>{Vue.set(w,'highlight',undefined)})
 			     	})
@@ -806,8 +808,8 @@ position: absolute;
 			     		Vue.set(b,'highlight',false)
 			     		b.wordIndex.forEach((w)=>{Vue.set(w,'highlight',false)})
 			     	})
-			     	console.log("This is the target")
-			     	console.log(target)
+			     	// console.log("This is the target")
+			     	// console.log(target)
 			     	target.occ.forEach((o)=>{
 
 			     		Vue.set(this.$data.doc.blocksNerParsed[o.block],'highlight',true)

@@ -239,7 +239,7 @@
     		blockHolder.innerHTML=""
 
     		buildManualBlocks().forEach((b, i)=>{
-
+    			console.log(b,"<<<")
 				var block = document.createElement("div")
 				block.classList.add('block')
 				block.setAttribute('id',`block-${i}`)
@@ -274,9 +274,10 @@
 				block.innerHTML = text
 
 
-				if (allManualIds.indexOf(i.toString()) === -1){
+				//if (allManualIds.indexOf(i.toString()) === -1){
+					console.log(block,"!!!!")
 					blockHolder.appendChild(block)	
-				}
+				//}
 
 
 
@@ -318,7 +319,7 @@
     		})
 
     		// run these boyes through the filters
-
+    		console.log(mb)
     		
     		return applyFilters(mb)
 
@@ -581,8 +582,12 @@
 
 		document.getElementById("add-temp-block").addEventListener("click",function(e){
 
-			manualBlockHolder.push(manualBlockTemp.slice())
+			if (manualBlockTemp.length==0){
+				return false
+			}
 
+			manualBlockHolder.push(manualBlockTemp.slice())
+			console.log(manualBlockHolder)
 			manualBlockTemp=[]
 			renderBlocks(applyBlocks())
 

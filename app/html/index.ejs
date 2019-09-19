@@ -7,6 +7,7 @@
   <title></title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="/html/css/bulma.min.css" >
 
   <link rel="manifest" href="site.webmanifest">
   <link rel="apple-touch-icon" href="icon.png">
@@ -26,13 +27,62 @@
       <a href="/upload/">Start processing a new document?</a>
 
     <% }else{ %>
-      <p></p>
 
-      <a href="/upload/">Start processing a new document?</a>
+      <section class="section">
+        <div class="container">
+          <nav class="navbar" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+              <a class="navbar-item" href="#">
+               <img style="max-height: 6.75rem;" class="logo" src="/html/css/dada_logo.jpg">
+               <h1 style="font-size:2em; padding-left: 30px; font-weight: bold">DADAlytics: Sélavy</h1>
+              </a>
 
-      <hr><br>
-      <a href="/auth/github" class="btn btn-default">Github</a>
-      <a href="/auth/twitter" class="btn btn-default">Twitter</a>
+
+            </div>
+          </nav>
+
+          <div style="text-align: center">
+            <a href="/upload/">Start processing a new document?</a>
+          </div>
+
+          <div style="margin-top: 100px;">Continue working on previous saved documents:</div>
+          <div id="previoussaved" style="padding-left: 20px;">No previous documents found on this computer</div>
+
+
+        </div>
+
+
+
+      </section>
+
+
+      <script type="text/javascript">
+          
+        var oldItems = JSON.parse(localStorage.getItem('selavySaved')) || [];
+        if (oldItems.length>0){
+          document.getElementById('previoussaved').innerHTML="";
+
+          oldItems.forEach((i)=>{
+
+            var aaa = document.createElement("a")
+            aaa.innerHTML = i;
+            aaa.setAttribute('href','/document/'+i+'/edit')
+            aaa.setAttribute('style','display:block;')
+            document.getElementById('previoussaved').appendChild(aaa)
+
+
+          })
+        }
+
+
+      </script>
+
+
+
+
+
+<!--       <a href="/auth/github" class="btn btn-default">Github</a>
+      <a href="/auth/twitter" class="btn btn-default">Twitter</a> -->
     <% } %>
 
 
