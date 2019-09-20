@@ -57,8 +57,16 @@
 
 
       <script type="text/javascript">
-          
+                  
+        const unique = (value, index, self) => {
+          return self.indexOf(value) === index
+        }
+
+
+
+
         var oldItems = JSON.parse(localStorage.getItem('selavySaved')) || [];
+        oldItems = oldItems.filter(unique)
         if (oldItems.length>0){
           document.getElementById('previoussaved').innerHTML="";
 

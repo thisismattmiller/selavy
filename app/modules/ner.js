@@ -18,6 +18,9 @@ exports.processNer = function(docId){
 
     		docSave.blocksNer = allResults
     		docSave.nerStatus = Math.ceil(allResults.length/blocksCount*100)
+    		if (docSave.nerStatus == 99){
+    			docSave.nerStatus = 100
+    		}
     		console.log(docSave.nerStatus, allResults.length)
 			docSave.save(function (err) {
 			  if (err){
@@ -38,7 +41,7 @@ exports.processNer = function(docId){
 
 
 	var timeout = setInterval(()=>{
-
+		console.log("doing save")
 		save()
 
 	},5000)
@@ -52,9 +55,30 @@ exports.processNer = function(docId){
 
 		doc.blocksRaw.forEach((b, idx)=>{
 
-			allBlocks.push({'text':b.join(' '),'order':idx})
+			if (b.join(' ').trim().length>0){
+				allBlocks.push({'text':b.join(' '),'order':idx})	
+			}
+			
 		})
-
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log(allBlocks)
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
+		console.log("-------------")
 
 
 		async.mapLimit(allBlocks, 5, async function(block) {
